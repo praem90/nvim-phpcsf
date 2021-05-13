@@ -1,0 +1,10 @@
+
+augroup PHPCS
+    autocmd!
+    autocmd BufWritePre *.php :call RunPHPCS()
+augroup END
+
+
+fun! RunPHPCS()
+    lua require'phpcs'.cs()
+endfun
