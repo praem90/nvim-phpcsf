@@ -6,9 +6,15 @@ To run sniffer
 To run beautifier
 `:lua require'phpcs'.cbf()`
 
+Available configurations
+```
+let g:nvim_phpcs_config_phpcs_path = 'phpcs'
+let g:nvim_phpcs_config_phpcbf_path = 'phpcbf'
+let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " path to your ruleset phpcs.xml
+```
+
 
 ### TODO:
- [ ] Make options for both phpcs and phpcbf paths
- [ ] Add option for standard
- [ ] Fix telescope previewer
+ [ ] Bind phpcs to local quickfix list
+ [ ] And or Add sign to current buffer
 

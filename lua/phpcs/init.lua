@@ -10,12 +10,13 @@ local lutils = require('phpcs.utils')
 -- Config Variables
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
 M.phpcbf_path = vim.g.nvim_phpcs_config_phpcbf_paths or phpcbf_path
+M.phpcs_standard = vim.g.nvim_phpcs_config_phpcs_standard or phpcs_standard
 
 M.cs = function ()
 	local cmd = {
 		M.phpcs_path,
 		"--report=emacs",
-		"--standard=" .. phpcs_standard,
+		"--standard=" .. M.phpcs_standard,
 		vim.fn.expand('%')
 	}
 
@@ -30,7 +31,7 @@ M.cbf = function ()
 
 	local cmd = {
 		M.phpcbf_path,
-		"--standard=" .. phpcs_standard,
+		"--standard=" .. M.phpcs_standard,
 		vim.fn.expand('%')
 	}
 
