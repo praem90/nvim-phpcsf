@@ -17,3 +17,8 @@ function split(s, delimiter)
     end
     return result;
 end
+
+return {
+	backticks_table = backticks_table,
+	split = split
+}
