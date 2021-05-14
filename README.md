@@ -1,11 +1,11 @@
-## nvim-phpcsf
+# nvim-phpcsf
 
-### What is nvim-phpcsf?
+## What is nvim-phpcsf?
 `nvim-phpcsf` is a simple nvim plugin wrapper for both phpcs and phpcbf.
 The PHP_CodeSniffer's output is populated using the telescope picker. Telescope helps to navigate through phpcs errors and warnings and preview.
 
 
-### Instalation
+## Instalation
 Install [telescope](https://github.com/nvim-telescope/telescope.nvim) and [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer).
 Using the [vim-plug](https://github.com/junegunn/vim-plug) plugin manager add the following in your VIM configuration (e.g. ~/.vimrc or ~/.config/nvim/init.vim when using Neovim):
 
@@ -31,18 +31,18 @@ augroup ERGHO
 augroup END
 ```
 
-Configurations
+## Configurations
 ```
 let g:nvim_phpcs_config_phpcs_path = 'phpcs'
 let g:nvim_phpcs_config_phpcbf_path = 'phpcbf'
 let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " or path to your ruleset phpcs.xml
 ```
 
-### Thanks
+## Thanks
 [@thePrimeagen](https://github.com/theprimeagen)
 [@tjDevries](https://github.com/tjDevries)
 
-### TODO:
+## TODO:
  - [ ] Detect phpcs.xml automatically on the project root
  - [ ] Add sign to current buffer
 
