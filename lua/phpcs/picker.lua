@@ -10,7 +10,7 @@ local Previewer = require('telescope.previewers.previewer')
 
 local conf = require('telescope.config').values
 
-local lutils = require('utils');
+local lutils = require('phpcs.utils');
 
 
 function attach_mappings(prompt_bufnr)
