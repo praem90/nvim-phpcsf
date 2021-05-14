@@ -1,13 +1,11 @@
 ## nvim-phpcsf
 
 ### What is nvim-phpcsf?
------------------------
 `nvim-phpcsf` is a simple nvim plugin wrapper for both phpcs and phpcbf.
 The PHP_CodeSniffer's output is populated using the telescope picker. Telescope helps to navigate through phpcs errors and warnings and preview.
 
 
 ### Instalation
---------------
 Install [telescope](https://github.com/nvim-telescope/telescope.nvim) and [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer).
 Using the [vim-plug](https://github.com/junegunn/vim-plug) plugin manager add the following in your VIM configuration (e.g. ~/.vimrc or ~/.config/nvim/init.vim when using Neovim):
 
