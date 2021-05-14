@@ -1,20 +1,50 @@
-## Simple PHP_CodeSniffer plugin for nvim
+## nvim-phpcsf
+
+### What is nvim-phpcsf?
+-----------------------
+`nvim-phpcsf` is a simple nvim plugin wrapper for both phpcs and phpcbf.
+The PHP_CodeSniffer's output is populated using the telescope picker. Telescope helps to navigate through phpcs errors and warnings and preview.
+
+
+### Instalation
+--------------
+Install [telescope](https://github.com/nvim-telescope/telescope.nvim) and [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer).
+Using the [vim-plug](https://github.com/junegunn/vim-plug) plugin manager add the following in your VIM configuration (e.g. ~/.vimrc or ~/.config/nvim/init.vim when using Neovim):
+
+```
+Plug 'praem90/nvim-phpcsf'
+```
 
 To run sniffer
-`:lua require'phpcs'.cs()`
+```
+:lua require'phpcs'.cs()
+```
 
 To run beautifier
-`:lua require'phpcs'.cbf()`
+```
+:lua require'phpcs'.cbf()
+```
 
-Available configurations
+To run PHP_CodeBeautifier after save (It is recommended to run this after the buffer has been written BufWritePost)
+```
+augroup ERGHO
+    autocmd!
+    autocmd BufWritePost *.php :lua require'phpcs'.cbf()
+augroup END
+```
+
+Configurations
 ```
 let g:nvim_phpcs_config_phpcs_path = 'phpcs'
 let g:nvim_phpcs_config_phpcbf_path = 'phpcbf'
-let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " path to your ruleset phpcs.xml
+let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " or path to your ruleset phpcs.xml
 ```
 
+### Thanks
+[@thePrimeagen](https://github.com/theprimeagen)
+[@tjDevries](https://github.com/tjDevries)
 
 ### TODO:
- [ ] Bind phpcs to local quickfix list
- [ ] And or Add sign to current buffer
+ - [ ] Detect phpcs.xml automatically on the project root
+ - [ ] Add sign to current buffer
 
