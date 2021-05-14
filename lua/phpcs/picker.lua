@@ -85,5 +85,5 @@ function gen_from_output(line)
 end
 
 return {
-	show: run_cmd
+	show = run_cmd
 }

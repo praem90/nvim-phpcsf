@@ -4,8 +4,8 @@ local phpcs_path = "/home/praem90/.config/composer/vendor/bin/phpcs"
 local phpcbf_path =	"/home/praem90/.config/composer/vendor/bin/phpcbf"
 local phpcs_standard = "PSR2"
 
-local Picker = require('picker')
-local lutils = require('utils')
+local Picker = require('phpcs.picker')
+local lutils = require('phpcs.utils')
 
 -- Config Variables
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
