@@ -38,12 +38,6 @@ function run_cmd(find_command, opts)
             results = lutils.backticks_table(table.concat(find_command, " ")),
             entry_maker = gen_from_output
         },
-        on_complete = {
-        	function(picker)
-        		print(picker.get_selection().value)
-        		print('Test call back')
-        	end
-    	},
         previewer = Previewer:new {
         	preview_fn = preview_function(opts),
         	sorter = conf.generic_sorter(opts),

@@ -11,14 +11,20 @@ function backticks_table(cmd)
 end
 
 function split(s, delimiter)
-    result = {};
+    result = {}
     for match in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, match);
+        table.insert(result, match)
     end
     return result;
 end
 
+function file_exists(filename)
+    local stat = vim.loop.fs_stat(vim.loop.cwd() .. '/' ..filename)
+    return stat and stat.type == 'file'
+end
+
 return {
 	backticks_table = backticks_table,
-	split = split
+	split = split,
+    file_exists = file_exists
 }
