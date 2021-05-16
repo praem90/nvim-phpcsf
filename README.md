@@ -43,6 +43,6 @@ let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " or path to your ruleset phpcs.
 [@tjDevries](https://github.com/tjDevries)
 
 ## TODO:
- - [ ] Detect phpcs.xml automatically on the project root
+ - [x] Detect phpcs.xml automatically on the project root
  - [ ] Add sign to current buffer
 
