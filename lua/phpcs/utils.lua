@@ -13,7 +13,7 @@ end
 function split(s, delimiter)
     result = {}
     for match in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, match)
+        table.insert(result, all_trim(match))
     end
     return result;
 end
@@ -21,6 +21,10 @@ end
 function file_exists(filename)
     local stat = vim.loop.fs_stat(vim.loop.cwd() .. '/' ..filename)
     return stat and stat.type == 'file'
+end
+
+function all_trim(s)
+   return s:match( "^%s*(.-)%s*$" )
 end
 
 return {
