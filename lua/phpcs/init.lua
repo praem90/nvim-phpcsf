@@ -139,14 +139,21 @@ M.cbf = function ()
 		return
 	end
 
-	local cmd = {
-		M.phpcbf_path,
+	local args = {
 		"--standard=" .. M.phpcs_standard,
 		vim.fn.expand('%')
 	}
 
-	lutils.backticks_table(table.concat(cmd, " "))
+  handle = loop.spawn(M.phpcbf_path, {
+    args = args,
+    stdio = {nil, nil, nil},
+    cwd = vim.fn.getcwd()
+  },
+  vim.schedule_wrap(function()
+    if not handle:is_closing() then handle:close() end
 	vim.cmd('e')
+  end
+  ))
 end
 
 
