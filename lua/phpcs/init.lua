@@ -1,5 +1,6 @@
 local M = {};
 
+local loop = vim.loop
 local root = vim.loop.cwd()
 local phpcs_path = "/home/praem90/.config/composer/vendor/bin/phpcs"
 local phpcbf_path =	"/home/praem90/.config/composer/vendor/bin/phpcbf"
@@ -27,17 +28,111 @@ M.detect_local_paths = function ()
     end
 end
 
-M.cs = function ()
-	local cmd = {
-		M.phpcs_path,
-		"--report=emacs",
-		"--standard=" .. M.phpcs_standard,
-		vim.fn.expand('%')
-	}
+M.cs = function (opts)
+  opts = opts or {}
+  local stdin = loop.new_pipe(false) -- create file descriptor for stdout
+  local stdout = loop.new_pipe(false) -- create file descriptor for stdout
+  local stderr = loop.new_pipe(false) -- create file descriptor for stdout
+  local results = {}
 
-    Picker.show(cmd)
+  local function onread(err, data)
+    if err then
+      print('ERROR: '.. err)
+    end
+    if data then
+      local vals = vim.split(data, "\n")
+      for _, d in pairs(vals) do
+        if d == "" then goto continue end
+        table.insert(results, d)
+        ::continue::
+      end
+    end
+  end
+
+  local args = {
+	"--report=emacs",
+	"--standard=" .. M.phpcs_standard,
+    "-"
+  }
+
+  handle = loop.spawn(M.phpcs_path, {
+    args = args,
+    stdio = {stdin,stdout,stderr},
+    cwd = vim.fn.getcwd()
+  },
+  vim.schedule_wrap(function()
+    stdout:read_stop()
+    stderr:read_stop()
+    stdout:close()
+    stderr:close()
+    handle:close()
+    M.publish_diagnostic(results)
+  end
+  ))
+  loop.read_start(stdout, onread) -- TODO implement onread handler
+  loop.read_start(stderr, onread)
+
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+
+  for _, line in ipairs(lines) do
+    stdin:write(line .. '\n')
+  end
+
+  stdin:close()
 end
 
+M.publish_diagnostic = function (results, bufnr)
+	local method = 'textDocument/publishDiagnostics';
+
+	local bufnr = bufnr or vim.api.nvim_get_current_buf()
+
+	local diagnostics = {}
+
+	local errorCodes = {
+		error = vim.lsp.protocol.DiagnosticSeverity.Error,
+		warning = vim.lsp.protocol.DiagnosticSeverity.Warning,
+	}
+
+	for _, line in ipairs(results) do
+		local item = parse_cs_line(line)
+
+		table.insert(diagnostics, {
+			code = assert(errorCodes[item.code], "Invalid Code"),
+			range = {
+				['start'] = {
+					line = tonumber(item.lnum) - 1,
+					character = tonumber(item.col) - 1
+				},
+				['end'] = {
+					line = tonumber(item.lnum) - 1,
+					character = tonumber(item.col)
+				},
+			},
+			message = item.message
+		})
+	end
+
+	local result = {
+		uri = vim.uri_from_bufnr(bufnr),
+		diagnostics = diagnostics
+	}
+
+	vim.lsp.handlers[method](nil, method, result, 1000, bufnr)
+end
+
+function parse_cs_line(line)
+    local cursor_position = lutils.split(line, ':')
+
+    local code_msg = lutils.split(cursor_position[4], '-')
+
+    return {
+      lnum = cursor_position[2],
+      col = cursor_position[3],
+      start = cursor_position[2],
+	  code = code_msg[1],
+	  message = code_msg[2]
+    }
+end
 
 M.cbf = function ()
 	if vim.g.disable_cbf then
@@ -53,6 +148,7 @@ M.cbf = function ()
 	lutils.backticks_table(table.concat(cmd, " "))
 	vim.cmd('e')
 end
+
 
 M.detect_local_paths()
 

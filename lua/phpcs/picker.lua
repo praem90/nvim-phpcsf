@@ -29,13 +29,13 @@ function attach_mappings(prompt_bufnr)
 	return true
 end
 
-function run_cmd(find_command, opts)
+function run_cmd(results, opts)
     opts = opts or {}
     opts.buffname = vim.api.nvim_win_get_buf(0)
     pickers.new(opts, {
         prompt_title = 'PHPCS',
         finder = finders.new_table {
-            results = lutils.backticks_table(table.concat(find_command, " ")),
+            results = results,
             entry_maker = gen_from_output
         },
         previewer = Previewer:new {

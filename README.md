@@ -25,8 +25,9 @@ To run beautifier
 
 To run PHP_CodeBeautifier after save (It is recommended to run this after the buffer has been written BufWritePost)
 ```
-augroup ERGHO
+augroup PHBSCF
     autocmd!
+    autocmd BufWritePost,BufReadPost,InsertLeave *.php :lua require'phpcs'.cs()
     autocmd BufWritePost *.php :lua require'phpcs'.cbf()
 augroup END
 ```
@@ -44,5 +45,5 @@ let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " or path to your ruleset phpcs.
 
 ## TODO:
  - [x] Detect phpcs.xml automatically on the project root
- - [ ] Add sign to current buffer
+ - [x] Add sign to current buffer
 
