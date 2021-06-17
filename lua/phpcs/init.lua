@@ -13,6 +13,8 @@ local lutils = require('phpcs.utils')
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
 M.phpcbf_path = vim.g.nvim_phpcs_config_phpcbf_paths or phpcbf_path
 M.phpcs_standard = vim.g.nvim_phpcs_config_phpcs_standard or phpcs_standard
+M.last_stderr = ''
+M.last_stdout = ''
 
 M.detect_local_paths = function ()
     if (lutils.file_exists('phpcs.xml')) then
@@ -34,8 +36,10 @@ M.cs = function (opts)
   local stdout = loop.new_pipe(false) -- create file descriptor for stdout
   local stderr = loop.new_pipe(false) -- create file descriptor for stdout
   local results = {}
+  local bufnr = vim.api.nvim_get_current_buf()
 
   local function onread(err, data)
+      M.read_stdout(err, data)
     if err then
       print('ERROR: '.. err)
     end
@@ -49,6 +53,7 @@ M.cs = function (opts)
     end
   end
 
+  M.reset_output_str();
   local args = {
 	"--report=emacs",
 	"--standard=" .. M.phpcs_standard,
@@ -66,13 +71,13 @@ M.cs = function (opts)
     stdout:close()
     stderr:close()
     handle:close()
-    M.publish_diagnostic(results)
+    M.publish_diagnostic(results, bufnr)
   end
   ))
   loop.read_start(stdout, onread) -- TODO implement onread handler
-  loop.read_start(stderr, onread)
+  loop.read_start(stderr, vim.schedule_wrap(M.read_stderr))
 
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
 
   for _, line in ipairs(lines) do
     stdin:write(line .. '\n')
@@ -135,25 +140,68 @@ function parse_cs_line(line)
 end
 
 M.cbf = function ()
+
 	if vim.g.disable_cbf then
 		return
 	end
 
-	local args = {
-		"--standard=" .. M.phpcs_standard,
-		vim.fn.expand('%')
-	}
+    local stdout = loop.new_pipe(false) -- create file descriptor for stdout
+    local stderr = loop.new_pipe(false) -- create file descriptor for stdout
 
-  handle = loop.spawn(M.phpcbf_path, {
-    args = args,
-    stdio = {nil, nil, nil},
-    cwd = vim.fn.getcwd()
-  },
-  vim.schedule_wrap(function()
-    if not handle:is_closing() then handle:close() end
-	vim.cmd('e')
-  end
-  ))
+	local args = {
+        "--standard=" .. M.phpcs_standard,
+        vim.fn.expand('%')
+    }
+
+    M.reset_output_str();
+
+    handle = loop.spawn(M.phpcbf_path, {
+      args = args,
+      stdio = {nil, stdout, stderr},
+      cwd = vim.fn.getcwd()
+    },
+    vim.schedule_wrap(function()
+      if not handle:is_closing() then handle:close() end
+      vim.cmd('e')
+    end))
+
+    loop.read_start(stdout, vim.schedule_wrap(M.read_stdout))
+    loop.read_start(stderr, vim.schedule_wrap(M.read_stderr))
+end
+
+M.get_last_stderr = function ()
+    print(M.last_stderr);
+
+    return M.last_stderr
+end
+
+M.get_last_stdout = function ()
+    print(M.last_stdout);
+
+    return M.last_stdout
+end
+
+M.read_stdout = function (err, data)
+	if err then
+  	  print('ERROR: '.. err)
+	end
+	if data then
+    	M.last_stdout = M.last_stdout .. data
+	end
+end
+
+M.read_stderr = function (err, data)
+	if err then
+  	  print('ERROR: '.. err)
+	end
+	if data then
+    	M.last_stderr = M.last_stderr .. data
+	end
+end
+
+M.reset_output_str = function ()
+	M.last_stderr = ''
+	M.last_stdout = ''
 end
 
 
