@@ -3,5 +3,5 @@
 
 function fs($tes)
 {
-    echo $tes;
+echo $tes;
 }

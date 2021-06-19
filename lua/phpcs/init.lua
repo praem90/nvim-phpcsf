@@ -68,9 +68,9 @@ M.cs = function (opts)
   vim.schedule_wrap(function()
     stdout:read_stop()
     stderr:read_stop()
-    stdout:close()
-    stderr:close()
-    handle:close()
+	lutils.close_handle(stdout);
+	lutils.close_handle(stderr);
+	lutils.close_handle(handle);
     M.publish_diagnostic(results, bufnr)
   end
   ))
@@ -140,7 +140,6 @@ function parse_cs_line(line)
 end
 
 M.cbf = function ()
-
 	if vim.g.disable_cbf then
 		return
 	end
@@ -148,12 +147,12 @@ M.cbf = function ()
     local stdout = loop.new_pipe(false) -- create file descriptor for stdout
     local stderr = loop.new_pipe(false) -- create file descriptor for stdout
 
+    M.reset_output_str();
+
 	local args = {
         "--standard=" .. M.phpcs_standard,
         vim.fn.expand('%')
     }
-
-    M.reset_output_str();
 
     handle = loop.spawn(M.phpcbf_path, {
       args = args,
@@ -162,7 +161,7 @@ M.cbf = function ()
     },
     vim.schedule_wrap(function()
       if not handle:is_closing() then handle:close() end
-      vim.cmd('e')
+      vim.api.nvim_command("noautocmd :update")
     end))
 
     loop.read_start(stdout, vim.schedule_wrap(M.read_stdout))

@@ -27,8 +27,13 @@ function all_trim(s)
    return s:match( "^%s*(.-)%s*$" )
 end
 
+function close_handle(handle)
+	if not handle:is_closing() then handle:close() end
+end
+
 return {
 	backticks_table = backticks_table,
 	split = split,
+	close_handle = close_handle,
     file_exists = file_exists
 }
