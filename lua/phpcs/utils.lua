@@ -31,9 +31,25 @@ function close_handle(handle)
 	if not handle:is_closing() then handle:close() end
 end
 
+function implode(delimiter, list)
+  local len = #list
+  if len == 0 then
+    return ""
+  end
+  local string = list[1]
+  for i = 2, len do
+    string = string .. delimiter .. list[i]
+  end
+  return string
+end
+
 return {
 	backticks_table = backticks_table,
 	split = split,
+	implode = implode,
 	close_handle = close_handle,
+	is_empty = function (s)
+		return s == nil or s == ''
+	end,
     file_exists = file_exists
 }

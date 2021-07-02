@@ -32,7 +32,7 @@ end
 
 M.cs = function (opts)
   opts = opts or {}
-  local stdin = loop.new_pipe(false) -- create file descriptor for stdout
+  local stdin = loop.new_pipe(true) -- create file descriptor for stdout
   local stdout = loop.new_pipe(false) -- create file descriptor for stdout
   local stderr = loop.new_pipe(false) -- create file descriptor for stdout
   local results = {}
@@ -55,6 +55,7 @@ M.cs = function (opts)
 
   M.reset_output_str();
   local args = {
+    "--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
 	"--report=emacs",
 	"--standard=" .. M.phpcs_standard,
     "-"
@@ -65,6 +66,7 @@ M.cs = function (opts)
     stdio = {stdin,stdout,stderr},
     cwd = vim.fn.getcwd()
   },
+
   vim.schedule_wrap(function()
     stdout:read_stop()
     stderr:read_stop()
@@ -79,42 +81,58 @@ M.cs = function (opts)
 
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
 
-  for _, line in ipairs(lines) do
-    stdin:write(line .. '\n')
+  local line_count = #lines
+  for i, line in ipairs(lines) do
+    stdin:write(line)
+
+    if i == line_count then
+      stdin:write('\n', function ()
+          stdin:close()
+      end)
+    else
+        stdin:write('\n')
+    end
   end
 
-  stdin:close()
 end
 
 M.publish_diagnostic = function (results, bufnr)
 	local method = 'textDocument/publishDiagnostics';
 
-	local bufnr = bufnr or vim.api.nvim_get_current_buf()
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
 	local diagnostics = {}
 
 	local errorCodes = {
-		error = vim.lsp.protocol.DiagnosticSeverity.Error,
+		['error'] = vim.lsp.protocol.DiagnosticSeverity.Error,
 		warning = vim.lsp.protocol.DiagnosticSeverity.Warning,
 	}
 
 	for _, line in ipairs(results) do
+		if not line then goto continue end
+
 		local item = parse_cs_line(line)
 
-		table.insert(diagnostics, {
-			code = assert(errorCodes[item.code], "Invalid Code"),
-			range = {
-				['start'] = {
-					line = tonumber(item.lnum) - 1,
-					character = tonumber(item.col) - 1
-				},
-				['end'] = {
-					line = tonumber(item.lnum) - 1,
-					character = tonumber(item.col)
-				},
-			},
-			message = item.message
-		})
+		if not item or item.lnum or item.col or errorCodes[item.code] then
+            goto continue
+		end
+
+        table.insert(diagnostics, {
+            code = assert(errorCodes[item.code], "Invalid Code"),
+            range = {
+                ['start'] = {
+                    line = tonumber(item.lnum) - 1,
+                    character = tonumber(item.col) - 1
+                },
+                ['end'] = {
+                    line = tonumber(item.lnum) - 1,
+                    character = tonumber(item.col)
+                },
+            },
+            message = item.message
+        })
+
+		::continue::
 	end
 
 	local result = {
@@ -127,15 +145,24 @@ end
 
 function parse_cs_line(line)
     local cursor_position = lutils.split(line, ':')
+	local code_msg = {}
 
-    local code_msg = lutils.split(cursor_position[4], '-')
+	table.insert(code_msg, 'warning')
+
+    if not lutils.is_empty(cursor_position[4]) then
+    	code_msg = vim.split(cursor_position[4], '-')
+	end
+
+	local code = vim.trim(code_msg[1]);
+
+	table.remove(code_msg, 1)
 
     return {
       lnum = cursor_position[2],
       col = cursor_position[3],
       start = cursor_position[2],
-	  code = code_msg[1],
-	  message = code_msg[2]
+	  code = code,
+	  message = lutils.implode('-', code_msg)
     }
 end
 
@@ -161,7 +188,7 @@ M.cbf = function ()
     },
     vim.schedule_wrap(function()
       if not handle:is_closing() then handle:close() end
-      vim.api.nvim_command("noautocmd :update")
+      vim.api.nvim_command(":edit")
     end))
 
     loop.read_start(stdout, vim.schedule_wrap(M.read_stdout))
