@@ -61,21 +61,24 @@ M.cs = function (opts)
     "-"
   }
 
-  handle = loop.spawn(M.phpcs_path, {
-    args = args,
-    stdio = {stdin,stdout,stderr},
-    cwd = vim.fn.getcwd()
-  },
+  handle = loop.spawn(
+  	  M.phpcs_path,
+  	  {
+      	  args = args,
+      	  stdio = {stdin,stdout,stderr},
+      	  cwd = vim.fn.getcwd()
+  	  },
 
-  vim.schedule_wrap(function()
-    stdout:read_stop()
-    stderr:read_stop()
-	lutils.close_handle(stdout);
-	lutils.close_handle(stderr);
-	lutils.close_handle(handle);
-    M.publish_diagnostic(results, bufnr)
-  end
-  ))
+  	  vim.schedule_wrap(function()
+      	  stdout:read_stop()
+      	  stderr:read_stop()
+	  	  lutils.close_handle(stdout);
+	  	  lutils.close_handle(stderr);
+	  	  lutils.close_handle(handle);
+      	  M.publish_diagnostic(results, bufnr)
+  	  end
+  	  )
+  )
   loop.read_start(stdout, onread) -- TODO implement onread handler
   loop.read_start(stderr, vim.schedule_wrap(M.read_stderr))
 
@@ -103,7 +106,7 @@ M.publish_diagnostic = function (results, bufnr)
 
 	local diagnostics = {}
 
-	local errorCodes = {
+	local error_codes = {
 		['error'] = vim.lsp.protocol.DiagnosticSeverity.Error,
 		warning = vim.lsp.protocol.DiagnosticSeverity.Warning,
 	}
@@ -113,12 +116,21 @@ M.publish_diagnostic = function (results, bufnr)
 
 		local item = parse_cs_line(line)
 
-		if not item or item.lnum or item.col or errorCodes[item.code] then
+		if not item then
+            goto continue
+		end
+		if not  item.lnum   then
+            goto continue
+		end
+		if not  item.col   then
+            goto continue
+		end
+		if not  error_codes[item.code]   then
             goto continue
 		end
 
         table.insert(diagnostics, {
-            code = assert(errorCodes[item.code], "Invalid Code"),
+            code = assert(error_codes[item.code], "Invalid Code"),
             range = {
                 ['start'] = {
                     line = tonumber(item.lnum) - 1,
@@ -144,6 +156,7 @@ M.publish_diagnostic = function (results, bufnr)
 end
 
 function parse_cs_line(line)
+
     local cursor_position = lutils.split(line, ':')
 	local code_msg = {}
 
