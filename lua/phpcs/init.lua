@@ -151,8 +151,9 @@ M.publish_diagnostic = function (results, bufnr)
 		uri = vim.uri_from_bufnr(bufnr),
 		diagnostics = diagnostics
 	}
+    print(vim.inspect(result));
 
-	vim.lsp.handlers[method](nil, method, result, 1000, bufnr)
+    vim.lsp.handlers[method](nil, result, {method = method, client_id= 1000, bufrn= bufnr})
 end
 
 function parse_cs_line(line)
