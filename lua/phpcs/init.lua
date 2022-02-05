@@ -8,6 +8,7 @@ local phpcs_standard = "PSR2"
 
 local Picker = require('phpcs.picker')
 local lutils = require('phpcs.utils')
+local spawn = require('phpcs.spawn')
 
 -- Config Variables
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
@@ -30,73 +31,48 @@ M.detect_local_paths = function ()
     end
 end
 
-M.cs = function (opts)
-  opts = opts or {}
-  local stdin = loop.new_pipe(true) -- create file descriptor for stdout
-  local stdout = loop.new_pipe(false) -- create file descriptor for stdout
-  local stderr = loop.new_pipe(false) -- create file descriptor for stdout
-  local results = {}
-  local bufnr = vim.api.nvim_get_current_buf()
+M.cs = function ()
+	local bufnr = vim.api.nvim_get_current_buf()
 
-  local function onread(err, data)
-      M.read_stdout(err, data)
-    if err then
-      print('ERROR: '.. err)
-    end
-    if data then
-      local vals = vim.split(data, "\n")
-      for _, d in pairs(vals) do
-        if d == "" then goto continue end
-        table.insert(results, d)
-        ::continue::
-      end
-    end
-  end
+	local opts = {
+		cmd = M.phpcs_path,
+  		args = {
+    		"--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
+			"--report=emacs",
+			"--standard=" .. M.phpcs_standard,
+    		"-"
+  		},
+  		callback = M.publish_diagnostic
+  	}
 
-  M.reset_output_str();
-  local args = {
-    "--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
-	"--report=emacs",
-	"--standard=" .. M.phpcs_standard,
-    "-"
-  }
+  	spawn.exec(opts)
+end
 
-  handle = loop.spawn(
-  	  M.phpcs_path,
-  	  {
-      	  args = args,
-      	  stdio = {stdin,stdout,stderr},
-      	  cwd = vim.fn.getcwd()
-  	  },
+M.cbf = function (new_opts)
+	new_opts = new_opts or {}
+	local opts = {}
+  	local bufnr = vim.api.nvim_get_current_buf()
 
-  	  vim.schedule_wrap(function()
-      	  stdout:read_stop()
-      	  stderr:read_stop()
-	  	  lutils.close_handle(stdout);
-	  	  lutils.close_handle(stderr);
-	  	  lutils.close_handle(handle);
-      	  M.publish_diagnostic(results, bufnr)
-  	  end
-  	  )
-  )
-  loop.read_start(stdout, onread) -- TODO implement onread handler
-  loop.read_start(stderr, vim.schedule_wrap(M.read_stderr))
+  	if not new_opts.force then
+  		if vim.api.nvim_buf_line_count(bufnr) > 1000 then
+  			print("File too large. Ignoring code beautifier" )
+  			return
+  		end
+  	end
 
-  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
+	opts.cmd = M.phpcbf_path;
+	opts.args = {
+    	"--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
+		"--standard=" .. M.phpcs_standard,
+    	"-"
+  	}
 
-  local line_count = #lines
-  for i, line in ipairs(lines) do
-    stdin:write(line)
+  	opts.callback = function (results, bufnr)
+  		vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, results)
+  	end
 
-    if i == line_count then
-      stdin:write('\n', function ()
-          stdin:close()
-      end)
-    else
-        stdin:write('\n')
-    end
-  end
-
+	-- spawn.exec(opts)
+	spawn.exec(vim.tbl_extend('force', opts, new_opts))
 end
 
 M.publish_diagnostic = function (results, bufnr)
@@ -151,9 +127,8 @@ M.publish_diagnostic = function (results, bufnr)
 		uri = vim.uri_from_bufnr(bufnr),
 		diagnostics = diagnostics
 	}
-    print(vim.inspect(result));
 
-    vim.lsp.handlers[method](nil, result, {method = method, client_id= 1000, bufrn= bufnr})
+    vim.lsp.handlers[method](nil, result, {method = method, client_id= 1000, bufnr= bufnr})
 end
 
 function parse_cs_line(line)
@@ -179,71 +154,6 @@ function parse_cs_line(line)
 	  message = lutils.implode('-', code_msg)
     }
 end
-
-M.cbf = function ()
-	if vim.g.disable_cbf then
-		return
-	end
-
-    local stdout = loop.new_pipe(false) -- create file descriptor for stdout
-    local stderr = loop.new_pipe(false) -- create file descriptor for stdout
-
-    M.reset_output_str();
-
-	local args = {
-        "--standard=" .. M.phpcs_standard,
-        vim.fn.expand('%')
-    }
-
-    handle = loop.spawn(M.phpcbf_path, {
-      args = args,
-      stdio = {nil, stdout, stderr},
-      cwd = vim.fn.getcwd()
-    },
-    vim.schedule_wrap(function()
-      if not handle:is_closing() then handle:close() end
-      vim.api.nvim_command(":edit")
-    end))
-
-    loop.read_start(stdout, vim.schedule_wrap(M.read_stdout))
-    loop.read_start(stderr, vim.schedule_wrap(M.read_stderr))
-end
-
-M.get_last_stderr = function ()
-    print(M.last_stderr);
-
-    return M.last_stderr
-end
-
-M.get_last_stdout = function ()
-    print(M.last_stdout);
-
-    return M.last_stdout
-end
-
-M.read_stdout = function (err, data)
-	if err then
-  	  print('ERROR: '.. err)
-	end
-	if data then
-    	M.last_stdout = M.last_stdout .. data
-	end
-end
-
-M.read_stderr = function (err, data)
-	if err then
-  	  print('ERROR: '.. err)
-	end
-	if data then
-    	M.last_stderr = M.last_stderr .. data
-	end
-end
-
-M.reset_output_str = function ()
-	M.last_stderr = ''
-	M.last_stdout = ''
-end
-
 
 M.detect_local_paths()
 
