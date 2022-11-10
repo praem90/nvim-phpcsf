@@ -6,9 +6,8 @@ local phpcs_path = "/home/praem90/.config/composer/vendor/bin/phpcs"
 local phpcbf_path =	"/home/praem90/.config/composer/vendor/bin/phpcbf"
 local phpcs_standard = "PSR2"
 
-local Picker = require('phpcs.picker')
+local Job = require'plenary.job'
 local lutils = require('phpcs.utils')
-local spawn = require('phpcs.spawn')
 
 -- Config Variables
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
@@ -35,44 +34,61 @@ M.cs = function ()
 	local bufnr = vim.api.nvim_get_current_buf()
 
 	local opts = {
-		cmd = M.phpcs_path,
+		command = M.phpcs_path,
   		args = {
     		"--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
 			"--report=emacs",
 			"--standard=" .. M.phpcs_standard,
     		"-"
   		},
-  		callback = M.publish_diagnostic
+      	writer = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true),
+  		on_exit = vim.schedule_wrap(function(j)
+  			M.publish_diagnostic(j:result(), bufnr)
+  		end),
   	}
 
-  	spawn.exec(opts)
+  	Job:new(opts):start()
 end
 
+--[[
+--  new_opts = {
+        bufnr = 0, -- Buffer no. defaults to current
+        force = false, -- Ignore file size
+        timeout = 1000, -- Timeout in ms for the job. Default 1000ms
+    }
+]]
 M.cbf = function (new_opts)
 	new_opts = new_opts or {}
-	local opts = {}
-  	local bufnr = vim.api.nvim_get_current_buf()
+  	new_opts.bufnr = new_opts.bufnr or vim.api.nvim_get_current_buf()
 
   	if not new_opts.force then
-  		if vim.api.nvim_buf_line_count(bufnr) > 1000 then
+  		if vim.api.nvim_buf_line_count(new_opts.bufnr) > 1000 then
   			print("File too large. Ignoring code beautifier" )
   			return
   		end
   	end
 
-	opts.cmd = M.phpcbf_path;
-	opts.args = {
-    	"--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
-		"--standard=" .. M.phpcs_standard,
-    	"-"
+	local opts = {
+		command = M.phpcbf_path,
+  		args = {
+    		"--stdin-path=" .. vim.api.nvim_buf_get_name(new_opts.bufnr),
+			"--standard=" .. M.phpcs_standard,
+    		"-"
+  		},
+      	writer = vim.api.nvim_buf_get_lines(new_opts.bufnr, 0, -1, true),
+      	cwd = vim.fn.getcwd(),
   	}
 
-  	opts.callback = function (results, bufnr)
-  		vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, results)
-  	end
+  	local results, status = Job:new(opts):sync(new_opts.timeout or 1000)
 
-	-- spawn.exec(opts)
-	spawn.exec(vim.tbl_extend('force', opts, new_opts))
+  	status = tonumber(status)
+
+  	if status <= 1 then
+  		vim.api.nvim_buf_set_lines(new_opts.bufnr, 0, -1, true, results)
+    	M.cs()
+    else
+    	error("Failed to run code beautifier")
+	end
 end
 
 M.publish_diagnostic = function (results, bufnr)
