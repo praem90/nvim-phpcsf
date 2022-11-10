@@ -1,4 +1,5 @@
 local M = {};
+local json = require "json"
 
 local loop = vim.loop
 local root = vim.loop.cwd()
@@ -37,7 +38,7 @@ M.cs = function ()
 		command = M.phpcs_path,
   		args = {
     		"--stdin-path=" .. vim.api.nvim_buf_get_name(bufnr),
-			"--report=emacs",
+			"--report=json",
 			"--standard=" .. M.phpcs_standard,
     		"-"
   		},
@@ -96,80 +97,39 @@ M.publish_diagnostic = function (results, bufnr)
 
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-	local diagnostics = {}
+    local diagnostics = parse_json(table.concat(results), bufnr)
+
+    local ns = vim.api.nvim_create_namespace("phpcbf")
+    vim.diagnostic.set(ns, bufnr, diagnostics)
+end
+
+function parse_json(encoded, bufnr)
+    local decoded = json.decode(encoded)
+    local diagnostics = {}
+    local uri = vim.api.nvim_buf_get_name(bufnr);
 
 	local error_codes = {
 		['error'] = vim.lsp.protocol.DiagnosticSeverity.Error,
 		warning = vim.lsp.protocol.DiagnosticSeverity.Warning,
 	}
 
-	for _, line in ipairs(results) do
-		if not line then goto continue end
+	if not decoded.files[uri] then
+		return diagnostics
+	end
 
-		local item = parse_cs_line(line)
-
-		if not item then
-            goto continue
-		end
-		if not  item.lnum   then
-            goto continue
-		end
-		if not  item.col   then
-            goto continue
-		end
-		if not  error_codes[item.code]   then
-            goto continue
-		end
-
+	for _, message in ipairs(decoded.files[uri].messages) do
         table.insert(diagnostics, {
-            code = assert(error_codes[item.code], "Invalid Code"),
-            range = {
-                ['start'] = {
-                    line = tonumber(item.lnum) - 1,
-                    character = tonumber(item.col) - 1
-                },
-                ['end'] = {
-                    line = tonumber(item.lnum) - 1,
-                    character = tonumber(item.col)
-                },
-            },
-            message = item.message
+            severity = error_codes[string.lower(message.type)],
+            lnum	 = tonumber(message.line) -1,
+            col	 = tonumber(message.column) -1,
+            message = message.message
         })
-
 		::continue::
-	end
+    end
 
-	local result = {
-		uri = vim.uri_from_bufnr(bufnr),
-		diagnostics = diagnostics
-	}
-
-    vim.lsp.handlers[method](nil, result, {method = method, client_id= 1000, bufnr= bufnr})
+    return diagnostics
 end
 
-function parse_cs_line(line)
-
-    local cursor_position = lutils.split(line, ':')
-	local code_msg = {}
-
-	table.insert(code_msg, 'warning')
-
-    if not lutils.is_empty(cursor_position[4]) then
-    	code_msg = vim.split(cursor_position[4], '-')
-	end
-
-	local code = vim.trim(code_msg[1]);
-
-	table.remove(code_msg, 1)
-
-    return {
-      lnum = cursor_position[2],
-      col = cursor_position[3],
-      start = cursor_position[2],
-	  code = code,
-	  message = lutils.implode('-', code_msg)
-    }
-end
 
 M.detect_local_paths()
 
