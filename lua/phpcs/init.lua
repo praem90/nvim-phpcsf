@@ -1,6 +1,5 @@
 local M = {};
-local folder = (...):match("(.-)[^%.]+$")
-local json = require(folder .. 'json')
+local json = require('phpcs.json')
 
 local loop = vim.loop
 local root = vim.loop.cwd()
