@@ -43,8 +43,10 @@ M.cs = function ()
     		"-"
   		},
       	writer = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true),
-  		on_exit = vim.schedule_wrap(function(j)
-  			M.publish_diagnostic(j:result(), bufnr)
+  		on_exit = vim.schedule_wrap(function(j, s)
+            if s == 0 then
+  			    M.publish_diagnostic(j:result(), bufnr)
+            end
   		end),
   	}
 
@@ -61,9 +63,10 @@ end
 M.cbf = function (new_opts)
 	new_opts = new_opts or {}
   	new_opts.bufnr = new_opts.bufnr or vim.api.nvim_get_current_buf()
+  	new_opts.max_lines = new_opts.max_lines or 1000
 
   	if not new_opts.force then
-  		if vim.api.nvim_buf_line_count(new_opts.bufnr) > 1000 then
+  		if vim.api.nvim_buf_line_count(new_opts.bufnr) > new_opts.max_lines then
   			print("File too large. Ignoring code beautifier" )
   			return
   		end
@@ -93,8 +96,6 @@ M.cbf = function (new_opts)
 end
 
 M.publish_diagnostic = function (results, bufnr)
-	local method = 'textDocument/publishDiagnostics';
-
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
     local diagnostics = parse_json(table.concat(results), bufnr)
