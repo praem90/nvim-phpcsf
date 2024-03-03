@@ -1,10 +1,10 @@
 local M = {};
-local json = require "json"
+local json = require('phpcs.json')
 
 local loop = vim.loop
 local root = vim.loop.cwd()
-local phpcs_path = "/home/praem90/.config/composer/vendor/bin/phpcs"
-local phpcbf_path =	"/home/praem90/.config/composer/vendor/bin/phpcbf"
+local phpcs_path = "$HOME/.config/composer/vendor/bin/phpcs"
+local phpcbf_path = "$HOME/.config/composer/vendor/bin/phpcbf"
 local phpcs_standard = "PSR2"
 
 local Job = require'plenary.job'
