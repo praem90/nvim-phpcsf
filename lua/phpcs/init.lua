@@ -12,7 +12,7 @@ local lutils = require('phpcs.utils')
 
 -- Config Variables
 M.phpcs_path = vim.g.nvim_phpcs_config_phpcs_path or phpcs_path
-M.phpcbf_path = vim.g.nvim_phpcs_config_phpcbf_paths or phpcbf_path
+M.phpcbf_path = vim.g.nvim_phpcs_config_phpcbf_path or phpcbf_path
 M.phpcs_standard = vim.g.nvim_phpcs_config_phpcs_standard or phpcs_standard
 M.last_stderr = ''
 M.last_stdout = ''
