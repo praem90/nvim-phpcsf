@@ -43,7 +43,7 @@ M.cs = function ()
   		},
       	writer = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true),
   		on_exit = vim.schedule_wrap(function(j)
-            print(vim.inspec(j:result()))
+            print(vim.inspect(j:result()))
   			M.publish_diagnostic(j:result(), bufnr)
   		end),
   	}
