@@ -33,10 +33,20 @@ augroup END
 ```
 
 ## Configurations
-```
+```vim
 let g:nvim_phpcs_config_phpcs_path = 'phpcs'
 let g:nvim_phpcs_config_phpcbf_path = 'phpcbf'
-let g:nvim_phpcs_config_phpcs_standard = 'PSR2' " or path to your ruleset phpcs.xml
+let g:nvim_phpcs_config_phpcs_standard = 'PSR12' " or path to your ruleset phpcs.xml
+```
+
+Using lua
+
+```lua
+require("phpcs").setup({
+  phpcs = "phpcs",
+  phpcbf = "phpcbf",
+  standard = "PSR12"
+})
 ```
 
 ## Thanks
