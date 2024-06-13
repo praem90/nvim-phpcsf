@@ -1,7 +1,6 @@
 local M = {};
 local json = require('phpcs.json')
 
-local loop = vim.loop
 local root = vim.loop.cwd()
 local phpcs_path = "$HOME/.config/composer/vendor/bin/phpcs"
 local phpcbf_path = "$HOME/.config/composer/vendor/bin/phpcbf"
@@ -132,5 +131,33 @@ end
 
 
 M.detect_local_paths()
+
+--- Setup and configure nvim-phpcsf
+---
+--- @param opts table|nil
+---     - phpcs (string|nil):
+---         PHPCS path
+---     - phpcbf (string|nil):
+---         PHPCBF path
+---     - standard (string|nil):
+---         PHPCS standard
+M.setup = function (opts)
+    if opts == nil then
+        M.detect_local_paths()
+        return
+    end
+
+    if opts.phpcs ~= nil then
+        M.phpcs_path = opts.phpcs
+    end
+
+    if opts.phpcbf ~= nil then
+        M.phpcbf_path = opts.phpcbf
+    end
+
+    if opts.standard ~= nil then
+        M.phpcs_standard = opts.standard
+    end
+end
 
 return M
