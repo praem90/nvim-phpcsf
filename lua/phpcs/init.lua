@@ -82,9 +82,10 @@ M.cbf = function (new_opts)
 			"--standard=" .. M.phpcs_standard,
             vim.api.nvim_buf_get_name(new_opts.bufnr)
   		},
-  		on_exit = vim.schedule_wrap(function()
-            vim.diagnostic.set(M.nvim_namespace, new_opts.bufnr, {})
-            vim.cmd("e")
+  		on_exit = vim.schedule_wrap(function(j)
+            if j.code ~= 0 then
+                vim.cmd("e")
+            end
   		end),
       	cwd = vim.fn.getcwd(),
   	}
