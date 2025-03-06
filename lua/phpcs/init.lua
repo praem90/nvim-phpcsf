@@ -14,6 +14,7 @@ M.phpcs_standard = vim.g.nvim_phpcs_config_phpcs_standard or phpcs_standard
 M.last_stderr = ''
 M.last_stdout = ''
 M.nvim_namespace = nil
+M.max_line_numbers = 1000
 
 M.detect_local_paths = function ()
     if (lutils.file_exists('phpcs.xml')) then
@@ -32,6 +33,10 @@ M.detect_local_paths = function ()
 end
 
 M.cs = function ()
+    if vim.fn.executable(M.phpcs_path) == 0 then
+    	return
+    end
+
 	local bufnr = vim.api.nvim_get_current_buf()
 
     local report_file = os.tmpname();
@@ -66,12 +71,16 @@ end
     }
 ]]
 M.cbf = function (new_opts)
+    if vim.fn.executable(M.phpcbf_path) == 0 then
+    	return
+    end
+
 	new_opts = new_opts or {}
   	new_opts.bufnr = new_opts.bufnr or vim.api.nvim_get_current_buf()
 
   	if not new_opts.force then
-  		if vim.api.nvim_buf_line_count(new_opts.bufnr) > 1000 then
-  			print("File too large. Ignoring code beautifier" )
+  		if M.max_line_numbers and vim.api.nvim_buf_line_count(new_opts.bufnr) > M.max_line_numbers then
+  			-- print("File too large. Ignoring code beautifier" )
   			return
   		end
   	end
@@ -155,6 +164,10 @@ M.setup = function (opts)
 
     if opts.standard ~= nil then
         M.phpcs_standard = opts.standard
+    end
+
+    if opts.max_line_numbers ~= nil then
+        M.max_line_numbers = opts.max_line_numbers
     end
 end
 
